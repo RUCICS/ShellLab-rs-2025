@@ -1,0 +1,10 @@
+[package]
+name = "tsh_rust"
+version = "0.1.0"
+edition = "2021"
+authors = ["Your Name <your.email@example.com>"]
+description = "A shell lab framework for teaching process and job control in Rust."
+
+[dependencies]
+nix = "0.26"
+signal-hook = "0.3"

@@ -1,0 +1,44 @@
+# 编译生成的二进制文件和中间文件
+target/
+
+# Cargo 相关文件
+Cargo.lock
+**/*.rs.bk
+
+# Rust 编译缓存
+target/
+
+# 文档生成目录
+doc/
+
+# 覆盖测试结果
+*.profraw
+
+# IDE/编辑器相关文件
+# VSCode
+.vscode/
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Emacs
+*~
+
+# Vim
+*.swp
+*.swo
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Clippy Lint 生成的文件
+clippy.toml
