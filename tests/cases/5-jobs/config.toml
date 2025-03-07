@@ -1,0 +1,49 @@
+[meta]
+name = "Process jobs builtin command"
+description = "Test the jobs builtin command by starting background jobs and listing them."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Start first background job
+[[run.steps]]
+type = "input"
+content = "./myspin 2 &"
+
+# Start second background job
+[[run.steps]]
+type = "input"
+content = "./myspin 3 &"
+
+# Run jobs command to list background jobs
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Check that the output correctly shows two background jobs running
+[[run.steps]]
+type = "check"
+
+[[run.steps.check.sequence.patterns]]
+unordered = [
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 2 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 3 &", required = true },
+]
+
+# Terminate shell
+[[run.steps]]
+type = "close"
+
+[[run.steps]]
+type = "wait"
+timeout = 3.0

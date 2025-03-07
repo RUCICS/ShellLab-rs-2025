@@ -42,3 +42,13 @@ Desktop.ini
 
 # Clippy Lint 生成的文件
 clippy.toml
+
+build/
+.cache/
+.vscode/
+tsh
+myint
+myspin
+mysplit
+mystop
+.test_history

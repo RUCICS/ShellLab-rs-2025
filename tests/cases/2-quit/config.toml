@@ -1,0 +1,23 @@
+[meta]
+name = "Process builtin quit command"
+description = "Tests if the shell properly handles the builtin quit command."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+[[run.steps]]
+type = "input"
+content = "quit"
+
+[[run.steps]]
+type = "wait"

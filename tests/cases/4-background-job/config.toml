@@ -1,0 +1,45 @@
+[meta]
+name = "Background Job"
+description = "Run a background job and verify proper handling."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Echo the command that will be executed (this simulates what sdriver does)
+[[run.steps]]
+type = "input"
+content = "./myspin 1 &"
+
+# Wait briefly to allow the background job to start
+[[run.steps]]
+type = "sleep"
+seconds = 0.5
+
+# Run another command to ensure the shell returned to the prompt
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Wait for the background job to complete
+[[run.steps]]
+type = "sleep"
+seconds = 1.5
+
+# Exit the shell
+[[run.steps]]
+type = "input"
+content = "quit"
+
+# Wait for shell to terminate
+[[run.steps]]
+type = "wait"

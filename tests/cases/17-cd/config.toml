@@ -1,0 +1,41 @@
+[meta]
+name = "Process cd builtin command"
+description = "Tests the cd builtin command to change the current working directory."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+[[run.steps]]
+type = "input"
+content = "pwd"
+
+[[run.steps]]
+type = "input"
+content = "cd .."
+
+[[run.steps]]
+type = "input"
+content = "pwd"
+
+[[run.steps]]
+type = "close"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+
+[[run.steps]]
+type = "check"
+
+[run.steps.check]
+special_judge = "judge.py"

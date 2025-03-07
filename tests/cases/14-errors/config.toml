@@ -1,0 +1,217 @@
+[meta]
+name = "Simple error handling"
+description = "Tests shell's handling of various error conditions and edge cases"
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+stderr_to_stdout = true
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Test command not found
+[[run.steps]]
+type = "input"
+content = "./bogus"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "./bogus: Command not found"
+
+# Run a background job
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "\\[1\\] \\(\\d+\\) ./myspin 4 &"
+
+# Test fg with no args
+[[run.steps]]
+type = "input"
+content = "fg"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "fg.* requires PID or %jobid.*"
+
+# Test bg with no args
+[[run.steps]]
+type = "input"
+content = "bg"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "bg.* requires PID or %jobid.*"
+
+# Test fg with invalid arg
+[[run.steps]]
+type = "input"
+content = "fg a"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "fg: argument must be a PID or %jobid"
+
+# Test bg with invalid arg
+[[run.steps]]
+type = "input"
+content = "bg a"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "bg: argument must be a PID or %jobid"
+
+# Test fg with nonexistent PID
+[[run.steps]]
+type = "input"
+content = "fg 9999999"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "\\(9999999\\): No such process"
+
+# Test bg with nonexistent PID
+[[run.steps]]
+type = "input"
+content = "bg 9999999"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "\\(9999999\\): No such process"
+
+# Test fg with nonexistent job ID
+[[run.steps]]
+type = "input"
+content = "fg %2"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "%2: No such job"
+
+# Test fg with valid job ID
+[[run.steps]]
+type = "input"
+content = "fg %1"
+echo = true
+wait_for_output = true
+
+# Send TSTP after 2 seconds to stop the job
+[[run.steps]]
+type = "sleep"
+seconds = 0.5
+
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "Job \\[1\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+
+# Test bg with nonexistent job ID
+[[run.steps]]
+type = "input"
+content = "bg %2"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+
+[run.steps.check]
+stdout_pattern = "%2: No such job"
+
+# Test bg with valid job ID
+[[run.steps]]
+type = "input"
+content = "bg %1"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "\\[1\\] \\(\\d+\\) ./myspin 4 &"
+
+# Test jobs command
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "\\[1\\] \\(\\d+\\) Running ./myspin 4 &"
+
+# Clean exit
+[[run.steps]]
+type = "close"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+must_terminate = true

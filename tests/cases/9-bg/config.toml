@@ -1,0 +1,91 @@
+[meta]
+name = "Process bg builtin command"
+description = "Tests the bg builtin command to resume a stopped process in the background."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Start a background job
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+
+# Start a foreground job
+[[run.steps]]
+type = "input"
+content = "./myspin 5"
+
+# Wait 2 seconds
+[[run.steps]]
+type = "sleep"
+seconds = 2.0
+
+# Send TSTP signal to stop the foreground job
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+# Check job status
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Resume job 2 in background
+[[run.steps]]
+type = "input"
+content = "bg %2"
+
+# Verify job status changed
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Verify key output patterns
+[[run.steps]]
+type = "check"
+
+[run.steps.check.sequence]
+regex_mode = true
+case_sensitive = false
+allow_partial = false
+
+[[run.steps.check.sequence.patterns]]
+pattern = "\\[1\\] \\(\\d+\\) \\./myspin 4 &"
+required = true
+description = "Background job start message"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "Job \\[2\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+required = true
+description = "Foreground job stop message"
+
+[[run.steps.check.sequence.patterns]]
+unordered = [
+    { pattern = "\\[1\\] \\(\\d+\\) Running \\./myspin 4 &", required = true, description = "Running job 1 status" },
+    { pattern = "\\[2\\] \\(\\d+\\) Stopped \\./myspin 5", required = true, description = "Stopped job 2 status" },
+]
+required = true
+description = "Jobs command output with mixed states"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "\\[2\\] \\(\\d+\\) \\./myspin 5"
+required = true
+description = "BG command confirmation"
+
+[[run.steps.check.sequence.patterns]]
+unordered = [
+    { pattern = "\\[1\\] \\(\\d+\\) Running \\./myspin 4 &", required = true, description = "Job 1 running status" },
+    { pattern = "\\[2\\] \\(\\d+\\) Running \\./myspin 5", required = true, description = "Job 2 running status" },
+]
+required = true
+description = "Jobs command output with all running"

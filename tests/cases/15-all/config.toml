@@ -1,0 +1,213 @@
+[meta]
+name = "Putting it all together"
+description = "Comprehensive test of shell functionality including error handling, signal handling, job control, and built-in commands"
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+stderr_to_stdout = true
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Test command not found
+[[run.steps]]
+type = "input"
+content = "./bogus"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\./bogus: Command not found"
+
+# Test job interruption with SIGINT
+[[run.steps]]
+type = "input"
+content = "./myspin 10"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 2
+
+[[run.steps]]
+type = "signal"
+signal = "INT"
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)"
+
+# Test background jobs
+[[run.steps]]
+type = "input"
+content = "./myspin 3 &"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 3 &"
+
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\[2\\] \\(\\d+\\) \\./myspin 4 &"
+
+# Test jobs command
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check.sequence]
+# Use an unordered group to allow jobs to be listed in any order
+unordered = [
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 3 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+]
+
+# Test fg and TSTP handling
+[[run.steps]]
+type = "input"
+content = "fg %1"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 2
+
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "Job \\[1\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+
+# Test jobs command with stopped job
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check.sequence]
+# Use an unordered group to allow jobs to be listed in any order
+unordered = [
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Stopped \\./myspin 3 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+]
+
+# Test bg with invalid job ID
+[[run.steps]]
+type = "input"
+content = "bg %3"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "%3: No such job"
+
+# Test bg with valid job ID
+[[run.steps]]
+type = "input"
+content = "bg %1"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 3 &"
+
+# Test jobs command after bg
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 0.5
+must_pass = true
+
+[run.steps.check.sequence]
+# Use an unordered group to allow jobs to be listed in any order
+unordered = [
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 3 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+]
+
+# Test fg again
+[[run.steps]]
+type = "input"
+content = "fg %1"
+echo = true
+wait_for_output = true
+
+# Test quit command
+[[run.steps]]
+type = "input"
+content = "quit"
+echo = true
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+must_terminate = true
+score = 0.5

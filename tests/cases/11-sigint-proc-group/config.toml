@@ -1,0 +1,56 @@
+[meta]
+name = "Forward SIGINT to foreground process group"
+description = "Tests whether the shell correctly forwards SIGINT to every process in the foreground process group"
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+[[run.steps]]
+type = "input"
+content = "./mysplit 4"
+
+[[run.steps]]
+type = "sleep"
+seconds = 2
+
+[[run.steps]]
+type = "signal"
+signal = "INT"
+
+[[run.steps]]
+type = "check"
+score = 3
+
+[run.steps.check]
+stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)"
+
+[[run.steps]]
+type = "input"
+content = "/bin/ps a"
+
+[[run.steps]]
+type = "check"
+score = 2
+
+[run.steps.check]
+# We just check that ps command executed properly
+# We can't check exact output because PIDs will change
+stdout_pattern = "PID TTY.*STAT.*TIME.*COMMAND"
+special_judge = "check_ps_output.py"
+
+[[run.steps]]
+type = "close"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0

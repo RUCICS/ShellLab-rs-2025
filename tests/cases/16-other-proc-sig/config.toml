@@ -1,0 +1,78 @@
+[meta]
+name = "Handle signals from other processes"
+description = "Tests whether the shell can handle SIGTSTP and SIGINT signals that come from other processes instead of the terminal"
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+stderr_to_stdout = true
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Test SIGTSTP handling
+[[run.steps]]
+type = "input"
+content = "./mystop 2"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 3
+
+[[run.steps]]
+type = "check"
+score = 2
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+
+# Check jobs command
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+
+[run.steps.check]
+stdout_pattern = "\\[\\d+\\] \\(\\d+\\) Stopped ./mystop 2"
+
+# Test SIGINT handling
+[[run.steps]]
+type = "input"
+content = "./myint 2"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 3
+
+[[run.steps]]
+type = "check"
+score = 2
+
+[run.steps.check]
+stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)"
+
+# Clean exit
+[[run.steps]]
+type = "input"
+content = "quit"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+must_terminate = true

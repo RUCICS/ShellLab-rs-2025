@@ -1,0 +1,27 @@
+[debug]
+default_type = "rust"
+
+[setup]
+# 在运行测试之前需要执行的准备步骤
+
+[[setup.steps]]
+name = "Compile tsh"
+type = "command"
+command = "make"
+args = ["build-all"]
+required = true                               # 如果这一步失败，则终止所有测试
+message = "Preparing tsh..."
+success_message = "tsh compiled successfully"
+timeout = 60.0
+
+[paths]
+tests_dir = "tests"
+cases_dir = "tests/cases"
+common_dir = "tests/common"
+
+[grader]
+default_timeout = 5.0
+
+[executables]
+tsh = "${root_dir}/tsh"
+tshref = "${root_dir}/tshref"

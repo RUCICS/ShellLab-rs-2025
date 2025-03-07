@@ -1,0 +1,31 @@
+[meta]
+name = "Run a foreground job"
+description = "Tests the shell's ability to run a foreground job."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Run the echo command
+[[run.steps]]
+type = "input"
+content = "/bin/echo \"tsh> quit\""
+
+# Quit the shell
+[[run.steps]]
+type = "input"
+content = "quit"
+
+# Wait for the shell to terminate
+[[run.steps]]
+type = "wait"
+timeout = 5.0

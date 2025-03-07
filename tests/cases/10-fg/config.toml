@@ -1,0 +1,103 @@
+[meta]
+name = "Process fg builtin command"
+description = "Tests the shell's fg command and handling of job control signals."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Start a background job
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+
+# Wait for the job to start
+[[run.steps]]
+type = "sleep"
+seconds = 1.0
+
+# Bring the job to the foreground
+[[run.steps]]
+type = "input"
+content = "fg %1"
+
+# Wait a moment before sending signal
+[[run.steps]]
+type = "sleep"
+seconds = 1.0
+
+# Send TSTP signal (Ctrl+Z)
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+# Check if the job is stopped in job list
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Resume the job in foreground
+[[run.steps]]
+type = "input"
+content = "fg %1"
+
+# Wait for the job to complete (it should finish naturally)
+[[run.steps]]
+type = "sleep"
+seconds = 2.0
+
+# Verify no jobs are left
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+[[run.steps]]
+type = "close"
+
+# Wait for shell to finish processing
+[[run.steps]]
+type = "wait"
+timeout = 3.0
+
+# Validate output against reference
+[[run.steps]]
+type = "check"
+
+[run.steps.check.sequence]
+case_sensitive = false
+regex_mode = true
+allow_partial = false
+verify_end = true
+
+[[run.steps.check.sequence.patterns]]
+pattern = "> ./myspin 4 &"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "\\[1\\] \\(\\d+\\) ./myspin 4 &"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "> fg %1"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "Job \\[1\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "> jobs"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "\\[1\\] \\(\\d+\\) Stopped ./myspin 4 &"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "> fg %1"
+
+[[run.steps.check.sequence.patterns]]
+pattern = "> jobs"

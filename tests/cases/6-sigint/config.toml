@@ -1,0 +1,49 @@
+[meta]
+name = "Forward SIGINT"
+description = "Test if the shell correctly forwards SIGINT to the foreground job."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Run the foreground job
+[[run.steps]]
+type = "input"
+content = "./myspin 4"
+
+# Wait for 2 seconds
+[[run.steps]]
+type = "sleep"
+seconds = 2.0
+
+# Send SIGINT to the foreground job
+[[run.steps]]
+type = "signal"
+signal = "INT"
+
+# Wait a bit for the shell to process the signal and print the message
+[[run.steps]]
+type = "sleep"
+seconds = 0.5
+
+# Check output for correct termination message
+[[run.steps]]
+type = "check"
+check = { stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)" }
+
+[[run.steps]]
+type = "close"
+
+# Wait for shell to be ready for next command
+[[run.steps]]
+type = "wait"
+timeout = 3.0

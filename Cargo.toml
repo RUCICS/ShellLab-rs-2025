@@ -1,5 +1,5 @@
 [package]
-name = "tsh_rust"
+name = "tsh"
 version = "0.1.0"
 edition = "2021"
 authors = ["Your Name <your.email@example.com>"]
@@ -8,3 +8,29 @@ description = "A shell lab framework for teaching process and job control in Rus
 [dependencies]
 nix = "0.26"
 signal-hook = "0.3"
+once_cell = "1.17"
+rustyline = "15.0"
+dirs-next = "2.0"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+panic = "abort"
+
+[[bin]]
+name = "myint"
+path = "src/bin/myint.rs"
+
+[[bin]]
+name = "myspin"
+path = "src/bin/myspin.rs"
+
+[[bin]]
+name = "mysplit"
+path = "src/bin/mysplit.rs"
+
+[[bin]]
+name = "mystop"
+path = "src/bin/mystop.rs"

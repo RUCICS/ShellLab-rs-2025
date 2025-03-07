@@ -1,0 +1,49 @@
+[meta]
+name = "Process I/O redirection"
+description = "Tests the basic input and output redirection functionality."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${build_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# 测试输出重定向
+[[run.steps]]
+type = "input"
+content = "echo 'Hello, World!' > output.txt"
+
+[[run.steps]]
+type = "input"
+content = "cat output.txt"
+
+# 测试输入重定向
+[[run.steps]]
+type = "input"
+content = "echo 'Test input redirection' > input.txt"
+
+[[run.steps]]
+type = "input"
+content = "cat < input.txt"
+
+# 关闭 shell
+[[run.steps]]
+type = "close"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+
+# 使用特殊判断程序
+[[run.steps]]
+type = "check"
+
+[run.steps.check]
+special_judge = "judge.py"

@@ -1,0 +1,44 @@
+[meta]
+name = "Forward SIGINT Only to Foreground Job"
+description = "Tests if the shell correctly forwards SIGINT only to the foreground job while preserving background jobs."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Launch a background job
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+
+# Start a foreground job
+[[run.steps]]
+type = "input"
+content = "./myspin 5"
+
+# Send SIGINT - should only terminate the foreground job
+[[run.steps]]
+type = "signal"
+signal = "INT"
+
+# Check which jobs are still running
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Verify output matches expectations
+[[run.steps]]
+type = "check"
+# Reference expected output containing:
+# - Background job (myspin 4) still running
+# - Foreground job (myspin 5) terminated by signal 2
+check = { stdout_pattern = "\\[1\\].*Running.*myspin 4" }

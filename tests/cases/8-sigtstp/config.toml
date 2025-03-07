@@ -1,0 +1,69 @@
+[meta]
+name = "Forward SIGTSTP"
+description = "Verify that SIGTSTP is forwarded only to the foreground job."
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+# Start a background job
+[[run.steps]]
+type = "input"
+content = "./myspin 4 &"
+
+# Sleep briefly to ensure background job starts
+[[run.steps]]
+type = "sleep"
+seconds = 0.5
+
+# Start a foreground job
+[[run.steps]]
+type = "input"
+content = "./myspin 5"
+
+# Wait 2 seconds
+[[run.steps]]
+type = "sleep"
+seconds = 2.0
+
+# Send SIGTSTP signal (should only affect foreground job)
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+# Check job status
+[[run.steps]]
+type = "input"
+content = "jobs"
+
+# Wait for output to stabilize
+[[run.steps]]
+type = "sleep"
+seconds = 0.5
+
+# Verify the test output
+[[run.steps]]
+type = "check"
+check = { stdout_pattern = "\\[1\\].*Running.*myspin 4", stderr_pattern = "" }
+
+[[run.steps]]
+type = "check"
+check = { stdout_pattern = "\\[2\\].*Stopped.*myspin 5", stderr_pattern = "" }
+
+# Terminate and clean up
+[[run.steps]]
+type = "input"
+content = "quit"
+
+[[run.steps]]
+type = "wait"
+timeout = 5.0

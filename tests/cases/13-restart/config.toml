@@ -1,0 +1,95 @@
+[meta]
+name = "Restart stopped processes in process group"
+description = "Tests whether the shell correctly stops processes with TSTP and restarts them with fg"
+score = 10
+
+[[run]]
+name = "Run Shell"
+command = "${tsh}"
+pwd = "${root_dir}"
+args = ["-p"]
+mode = "interactive"
+timeout = 30.0
+
+[run.reference]
+command = "${tshref}"
+args = ["-p"]
+
+[[run.steps]]
+type = "input"
+content = "./mysplit 4"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 2
+
+[[run.steps]]
+type = "signal"
+signal = "TSTP"
+
+[[run.steps]]
+type = "check"
+score = 2
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) stopped by signal (20|SIGTSTP)"
+
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 2
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\[\\d+\\] \\(\\d+\\) Stopped ./mysplit 4"
+
+[[run.steps]]
+type = "input"
+content = "/bin/ps a"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 2
+must_pass = true
+special_judge = "judge_ps_stopped.py"
+
+[[run.steps]]
+type = "input"
+content = "fg %1"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "sleep"
+seconds = 1
+
+[[run.steps]]
+type = "input"
+content = "/bin/ps a"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 4
+must_pass = true
+special_judge = "judge_ps_running.py"
+
+[[run.steps]]
+type = "input"
+content = "quit"
+
+[[run.steps]]
+type = "wait"
+timeout = 1.0
+must_terminate = true
