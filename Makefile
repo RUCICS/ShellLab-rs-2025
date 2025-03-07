@@ -7,7 +7,7 @@ all: build
 # Build main program only
 build:
 	cargo build --bin tsh
-	cp target/debug/tsh .
+	@if [ ! -e tsh ]; then ln -s target/debug/tsh .; fi
 
 # Build main program and auxiliary programs
 build-all: build aux
@@ -35,18 +35,18 @@ aux: myint myspin mysplit mystop
 # Individual auxiliary programs
 myint:
 	cargo build --release --bin myint
-	cp target/release/myint .
+	@if [ ! -e myint ]; then ln -s target/release/myint .; fi
 
 myspin:
 	cargo build --release --bin myspin
-	cp target/release/myspin .
+	@if [ ! -e myspin ]; then ln -s target/release/myspin .; fi
 
 mysplit:
 	cargo build --release --bin mysplit
-	cp target/release/mysplit .
+	@if [ ! -e mysplit ]; then ln -s target/release/mysplit .; fi
 
 mystop:
 	cargo build --release --bin mystop
-	cp target/release/mystop .
+	@if [ ! -e mystop ]; then ln -s target/release/mystop .; fi
 
 .PHONY: all build build-all release run test clean aux myint myspin mysplit mystop
