@@ -5,8 +5,6 @@ pub const MAXARGS: usize = 128;
 pub struct Command {
     /// Command and its arguments.
     pub argv: Vec<String>,
-    /// Background flag: true if the command should run in the background.
-    pub bg: bool,
     /// Input redirection file, if any.
     pub infile: Option<String>,
     /// Output redirection file, if any.
@@ -22,7 +20,6 @@ impl Command {
     pub fn new() -> Self {
         Command {
             argv: Vec::new(),
-            bg: false,
             infile: None,
             outfile: None,
             append: false,
@@ -32,7 +29,8 @@ impl Command {
 }
 
 /// Parses the input command line and returns a Command structure representing
-/// the command (and pipeline, if present). This function handles:
+/// the command (and pipeline, if present) along with a background execution flag.
+/// This function handles:
 ///
 /// - Tokenization (including quoted strings)
 /// - Input redirection ("<") and output redirection (">" or ">>")
@@ -41,8 +39,9 @@ impl Command {
 /// - For each token, calling `substitute_token()` to process environment variable
 ///   expansion and command substitution.
 ///
-/// Returns `Ok(Command)` on success, or `Err(String)` on error.
-pub fn parse_command_line(cmdline: &str) -> Result<Command, String> {
+/// Returns `Ok((Command, bool))` on success, where the bool indicates background execution,
+/// or `Err(String)` on error.
+pub fn parse_command_line(cmdline: &str) -> Result<(Command, bool), String> {
     let tokens = tokenize(cmdline);
     if tokens.is_empty() {
         return Err("Empty command line".into());
@@ -51,6 +50,7 @@ pub fn parse_command_line(cmdline: &str) -> Result<Command, String> {
     let mut head = Command::new();
     let mut current = &mut head;
     let mut iter = tokens.into_iter().peekable();
+    let mut bg = false;
 
     while let Some(token) = iter.next() {
         match token.as_str() {
@@ -78,7 +78,7 @@ pub fn parse_command_line(cmdline: &str) -> Result<Command, String> {
                 }
             }
             "&" => {
-                current.bg = true;
+                bg = true;
             }
             _ => {
                 if current.argv.len() < MAXARGS - 1 {
@@ -89,7 +89,7 @@ pub fn parse_command_line(cmdline: &str) -> Result<Command, String> {
             }
         }
     }
-    Ok(head)
+    Ok((head, bg))
 }
 
 /// Splits the input command line into a vector of tokens. This function handles:
@@ -200,12 +200,12 @@ mod tests {
     #[test]
     fn test_parse_command_line() {
         let input = "grep 'pattern' < input.txt | sort > output.txt &";
-        let cmd = parse_command_line(input).unwrap();
+        let (cmd, bg) = parse_command_line(input).unwrap();
         assert_eq!(cmd.argv, vec!["grep", "pattern"]);
         assert_eq!(cmd.infile, Some("input.txt".to_string()));
         let next_cmd = cmd.next.unwrap();
         assert_eq!(next_cmd.argv, vec!["sort"]);
         assert_eq!(next_cmd.outfile, Some("output.txt".to_string()));
-        assert!(next_cmd.bg);
+        assert!(bg);
     }
 }

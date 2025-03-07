@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 /// - In the parent, adding the job to the job list if needed and waiting for foreground jobs.
 ///
 /// For now, this function is a stub. Students should implement the actual process control logic.
-pub fn execute_command(cmd: Command, job_list: &Arc<Mutex<JobList>>) {
+pub fn execute_command(cmd: Command, bg: bool, job_list: &Arc<Mutex<JobList>>) {
     println!("Executing external command: {:?}", cmd);
 
     // TODO:
@@ -22,5 +22,5 @@ pub fn execute_command(cmd: Command, job_list: &Arc<Mutex<JobList>>) {
     //    - Execute the command (e.g., using execvp).
     // 3. In the parent:
     //    - Add the job to the job list.
-    //    - If the command is foreground, wait for it to finish.
+    //    - If the command is foreground (!bg), wait for it to finish.
 }

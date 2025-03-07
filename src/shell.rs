@@ -35,13 +35,13 @@ pub fn run_shell(emit_prompt: bool, verbose: bool) {
                 }
                 // Parse the command line.
                 match parse_command_line(&cmdline) {
-                    Ok(command) => {
+                    Ok((command, bg)) => {
                         // If the command is built-in, execute it.
                         if handle_builtin(&command, &job_list) {
                             continue;
                         } else {
                             // Otherwise, execute it as an external command.
-                            execute_command(command, &job_list);
+                            execute_command(command, bg, &job_list);
                         }
                     }
                     Err(e) => eprintln!("Parse error: {}", e),
