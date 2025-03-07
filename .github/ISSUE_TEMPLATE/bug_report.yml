@@ -1,0 +1,178 @@
+name: Bug 报告
+description: 报告 Shell Lab 实验（Rust 版）中遇到的问题
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你花时间填写这份 bug 报告！请尽可能详细地提供相关信息，这将帮助我们更快地定位和解决问题。
+
+  - type: dropdown
+    id: bug-type
+    attributes:
+      label: Bug 类型
+      description: 这个问题主要涉及哪个方面？
+      options:
+        - 编译错误
+        - 运行时错误
+        - 测试用例失败
+        - 进程控制问题
+        - 信号处理问题
+        - 作业控制问题
+        - I/O 重定向问题
+        - 管道相关问题
+        - Rust 特定问题（所有权/借用/生命周期）
+        - Rust 特定问题（不安全代码/FFI）
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Bug 描述
+      description: 请简要描述你遇到的问题
+      placeholder: |
+        例如：
+        - 运行某个命令时 shell 崩溃
+        - 后台作业无法正确处理
+        - 遇到 Rust 编译错误
+        - 生命周期或所有权问题
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 请详细描述如何复现这个问题
+      placeholder: |
+        1. 编译并运行 shell: `cargo run`
+        2. 输入命令 '...'
+        3. 按下 Ctrl+C
+        4. 观察到错误行为：...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 描述正确情况下应该发生什么
+      placeholder: 例如：shell 应该终止前台进程并返回提示符
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 描述实际发生了什么
+      placeholder: 例如：shell 没有响应 Ctrl+C，前台进程继续运行
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os-type
+    attributes:
+      label: 操作系统类型
+      description: 你使用的是什么类型的操作系统环境？
+      options:
+        - Linux（原生）
+        - Linux（WSL2）
+        - macOS
+    validations:
+      required: true
+
+  - type: dropdown
+    id: linux-distro
+    attributes:
+      label: Linux 发行版
+      description: 如果你使用的是 Linux 环境，具体是哪个发行版？
+      options:
+        - Ubuntu 22.04 或更高版本
+        - Debian
+        - Fedora
+        - CentOS/RHEL
+        - Arch Linux
+        - 其他 Linux 发行版
+        - 不适用（我使用 macOS）
+    validations:
+      required: true
+
+  - type: input
+    id: rust-version
+    attributes:
+      label: Rust 版本
+      description: 你使用的 Rust 版本是多少？
+      placeholder: 例如：rustc 1.79.0
+    validations:
+      required: true
+
+  - type: input
+    id: cargo-version
+    attributes:
+      label: Cargo 版本
+      description: 你使用的 Cargo 版本是多少？
+      placeholder: 例如：cargo 1.79.0
+    validations:
+      required: true
+
+  - type: input
+    id: python
+    attributes:
+      label: Python 版本
+      description: 你使用的 Python 版本是多少？（用于运行测试脚本）
+      placeholder: 例如：Python 3.12.6
+    validations:
+      required: true
+
+  - type: textarea
+    id: test-output
+    attributes:
+      label: 测试输出
+      description: 如果是测试失败，请提供测试输出信息
+      placeholder: 请粘贴 grader.py 的完整输出
+      render: shell
+
+  - type: textarea
+    id: error-output
+    attributes:
+      label: 错误输出
+      description: 提供编译错误或运行时错误的完整输出
+      placeholder: |
+        请提供完整的错误信息，包括：
+        - 如果是编译错误，提供 `cargo build` 的完整输出
+        - 如果是运行时 panic，提供完整的 panic 信息和回溯
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关代码/日志
+      description: 请提供相关的代码片段、错误信息或日志
+      placeholder: |
+        - 如果是 Rust 相关问题，请提供相关模块的代码片段
+        - 如果使用了调试输出，请提供相关日志
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充信息
+      description: 还有什么其他相关信息需要补充吗？
+      placeholder: 例如：是否修改过框架代码？是否添加了新的 Rust 依赖？
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 确认事项
+      description: 在提交 bug 报告前，请确认以下内容
+      options:
+        - label: 我已经检查过现有的 issues，确认这不是一个重复的问题
+          required: true
+        - label: 我已经尝试使用最新版本的代码/依赖，问题仍然存在
+          required: true
+        - label: 我提供的信息足够复现这个问题
+          required: true
