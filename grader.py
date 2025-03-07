@@ -164,7 +164,8 @@ class Config:
                     "common_dir": "tests/common",
                 },
                 "debug": {
-                    "default_type": "gdb",  # or "lldb", "python"
+                    "default_type": "gdb",  # or "lldb", "python", "rust"
+                    "show_test_build_hint": True,  # 是否在失败时显示 TEST_BUILD 环境变量设置提示
                 },
             }
         with open(config_path, "rb") as f:
@@ -194,6 +195,7 @@ class Config:
             "debug",
             {
                 "default_type": "gdb",
+                "show_test_build_hint": True,
             },
         )
 
@@ -2221,7 +2223,6 @@ class TableFormatter(ResultFormatter):
         )
         self.console.print()
         self.console.print(summary)
-        self.console.print()
 
     def _print_basic_summary(self, total_score: float, max_score: float) -> None:
         self.console.print()
@@ -2229,7 +2230,6 @@ class TableFormatter(ResultFormatter):
             f"Total Score: {total_score:.1f}/{max_score:.1f} "
             f"({total_score / max_score * 100:.1f}%)"
         )
-        self.console.print()
 
 
 class VSCodeConfigGenerator:
@@ -2341,6 +2341,59 @@ class VSCodeConfigGenerator:
                     "preLaunchTask": f"build-{test_case.path.name}",
                 }
             ]
+        elif debug_type == "rust":
+            base_name = f"Debug {test_case.meta['name']} - Step {failed_step.get('name', 'failed step')}"
+            configs = []
+
+            # Add CodeLLDB configuration for Rust
+            configs.append({
+                "name": f"{base_name} (CodeLLDB)",
+                "type": "lldb",
+                "request": "launch",
+                "program": program,
+                "args": args,
+                "cwd": cwd,
+                "sourceLanguages": ["rust"],
+                "internalConsoleOptions": "neverOpen",
+                "preLaunchTask": f"build-{test_case.path.name}",
+                "env": {
+                    "RUST_BACKTRACE": "1"
+                }
+            })
+
+            # Add GDB configuration for Rust
+            configs.append({
+                "name": f"{base_name} (GDB)",
+                "type": "cppdbg",
+                "request": "launch",
+                "program": program,
+                "args": args,
+                "stopOnEntry": True,
+                "cwd": cwd,
+                "environment": [
+                    {
+                        "name": "RUST_BACKTRACE",
+                        "value": "1"
+                    }
+                ],
+                "internalConsoleOptions": "neverOpen",
+                "MIMode": "gdb",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": True,
+                    },
+                    {
+                        "description": "Enable Rust pretty-printing",
+                        "text": "set language rust",
+                        "ignoreFailures": True,
+                    }
+                ],
+                "preLaunchTask": f"build-{test_case.path.name}",
+            })
+
+            return configs
         else:
             raise ValueError(f"Unsupported debug type: {debug_type}")
 
@@ -2582,6 +2635,10 @@ class Grader:
             self.console.print("      - C/C++: ms-vscode.cpptools")
         elif debug_type == "python":
             self.console.print("      - Python: ms-python.python")
+        elif debug_type == "rust":
+            self.console.print("      - rust-analyzer: rust-lang.rust-analyzer")
+            self.console.print("      - CodeLLDB: vadimcn.vscode-lldb")
+            self.console.print("      - C/C++ (optional, for GDB): ms-vscode.cpptools")
         self.console.print("   c. Press F5 or use the Run and Debug view")
         self.console.print(
             "   d. Select the auto-generated configuration for this test"
@@ -2594,6 +2651,11 @@ class Grader:
         self.console.print("   - Continue (F5)")
         self.console.print("   - Inspect variables in the Variables view")
         self.console.print("   - Use Debug Console for expressions")
+        if debug_type == "rust":
+            self.console.print("\n4. Rust-specific debug features:")
+            self.console.print("   - RUST_BACKTRACE=1 is enabled for better error messages")
+            self.console.print("   - CodeLLDB provides native Rust debugging experience")
+            self.console.print("   - GDB configuration is also available as a backup option")
         self.console.print(
             "\nNote: The test will be automatically rebuilt before debugging starts"
         )
@@ -3058,6 +3120,28 @@ def get_current_shell() -> str:
     # 默认返回bash
     return "bash"
 
+def get_last_failed_tests(history_file: Path | str) -> List[Any]:
+    """Get the last failed tests from the history file
+
+    Args:
+        history_file (Path): The path to the history file
+
+    Returns:
+        List[Any]: The last failed tests
+    """
+    if isinstance(history_file, str):
+        history_file = Path(history_file)
+
+    if not history_file.exists():
+        return []
+    
+    with open(history_file, "r", encoding="utf-8") as f:
+        history = json.load(f)
+        if not history:
+            return []
+        
+        last_result = history[-1]
+        return filter(lambda x: x["status"] != "PASS", last_result["tests"])
 
 def main():
     parser = argparse.ArgumentParser(description="Grade student submissions")
@@ -3135,123 +3219,24 @@ def main():
     args = parser.parse_args()
 
     try:
-        # 如果是获取上次失败测试点的模式
         if args.get_last_failed:
             try:
-                history_file = Path(".test_history")
-                if not history_file.exists():
-                    print("No test history found", file=sys.stderr)
-                    sys.exit(1)
-
-                with open(history_file, "r", encoding="utf-8") as f:
-                    history = json.load(f)
-                    if not history:
-                        print("Test history is empty", file=sys.stderr)
-                        sys.exit(1)
-
-                    # 获取最近一次的测试结果
-                    last_result = history[-1]
-
-                    # 查找第一个失败的测试点
-                    for test in last_result["tests"]:
-                        if test["status"] != "PASS":
-                            # 获取shell类型
-                            shell_type = args.shell or get_current_shell()
-
-                            # 根据不同shell类型生成相应的命令
-                            if shell_type == "fish":
-                                print(f"set -x TEST_BUILD {test['build_path']}")
-                            else:  # bash 或 zsh
-                                print(f"export TEST_BUILD={test['build_path']}")
-                            sys.exit(0)
-
+                failed_tests = get_last_failed_tests(".test_history")
+                if not failed_tests:
                     print("No failed test found in last run", file=sys.stderr)
                     sys.exit(1)
+                
+                first_failed_test = failed_tests[0]
+                shell_type = args.shell or get_current_shell()
 
-            except Exception as e:
-                print(f"Error reading test history: {str(e)}", file=sys.stderr)
-                sys.exit(1)
-
-        # 如果是重新运行失败测试点的模式
-        if args.rerun_failed:
-            try:
-                history_file = Path(".test_history")
-                if not history_file.exists():
-                    print("No test history found", file=sys.stderr)
-                    sys.exit(1)
-
-                with open(history_file, "r", encoding="utf-8") as f:
-                    history = json.load(f)
-                    if not history:
-                        print("Test history is empty", file=sys.stderr)
-                        sys.exit(1)
-
-                    # 获取最近一次的测试结果
-                    last_result = history[-1]
-
-                    # 获取所有失败的测试点路径
-                    failed_paths = []
-                    for test in last_result["tests"]:
-                        if test["status"] != "PASS":
-                            failed_paths.append(Path(test["path"]))
-
-                    if not failed_paths:
-                        print("No failed test found in last run", file=sys.stderr)
-                        sys.exit(0)
-
-                    # 直接传入失败测试点的路径
-                    grader = Grader(json_output=args.json)
-                    grader.runner = TestRunner(
-                        grader.config, grader.console, verbose=args.verbose
-                    )
-                    grader.run_all_tests(specific_paths=failed_paths)
-
-                    # 检查是否所有测试都通过
-                    total_score = sum(
-                        result.score for result in grader.results.values()
-                    )
-                    max_score = sum(
-                        test.meta["score"]
-                        for test in grader._load_test_cases(specific_paths=failed_paths)
-                    )
-                    percentage = (total_score / max_score * 100) if max_score > 0 else 0
-
-                    # 如果需要写入结果文件
-                    if args.write_result:
-                        with open(".autograder_result", "w") as f:
-                            f.write(f"{percentage:.2f}")
-
-                    # 只要有测试点失败，输出提示信息
-                    if total_score < max_score:
-                        if not args.json:
-                            console = Console()
-                            shell_type = args.shell or get_current_shell()
-
-                            console.print(
-                                "\n[bold yellow]To set TEST_BUILD environment variable to the failed test case's build directory:[/bold yellow]"
-                            )
-
-                            if shell_type == "fish":
-                                console.print(
-                                    "$ [bold green]python3 grader.py -l | source[/bold green]"
-                                )
-                            else:
-                                console.print(
-                                    '$ [bold green]eval "$(python3 grader.py -l)"[/bold green]'
-                                )
-                        else:
-                            shell_type = args.shell or get_current_shell()
-                            print(
-                                "\nTo set TEST_BUILD to the first failed test case's build directory, run:"
-                            )
-                            if shell_type == "fish":
-                                print("python3 grader.py -l | source")
-                            else:
-                                print('eval "$(python3 grader.py -l)"')
-
-                    # 只要不是0分就通过
-                    sys.exit(0 if percentage > 0 else 1)
-
+                # 根据不同shell类型生成相应的命令
+                if shell_type == "fish":
+                    print(f"set -x TEST_BUILD {first_failed_test['build_path']}")
+                else:  # bash 或 zsh
+                    print(f"export TEST_BUILD={first_failed_test['build_path']}")
+                    
+                sys.exit(0)
+                    
             except Exception as e:
                 print(f"Error reading test history: {str(e)}", file=sys.stderr)
                 sys.exit(1)
@@ -3271,11 +3256,27 @@ def main():
             verbose=args.verbose,
             generate_vscode=args.vscode,
             vscode_no_merge=args.vscode_no_merge,
-            compare=args.compare,  # 传递对拍参数
+            compare=args.compare,
         )
-        total_score, max_score = grader.run_all_tests(
-            args.test, prefix_match=args.prefix, group=args.group
-        )
+        
+        if args.rerun_failed:
+            try:
+                failed_tests = get_last_failed_tests(".test_history")
+                if not failed_tests:
+                    print("No failed test found in last run", file=sys.stderr)
+                    sys.exit(1)
+                
+                failed_paths = [Path(test["path"]) for test in failed_tests]
+                total_score, max_score = grader.run_all_tests(specific_paths=failed_paths)
+
+            except Exception as e:
+                print(f"Error reading test history: {str(e)}", file=sys.stderr)
+                sys.exit(1)
+        
+        else:
+            total_score, max_score = grader.run_all_tests(
+                args.test, prefix_match=args.prefix, group=args.group
+            )
 
         # 如果是dry-run模式，直接退出
         if args.dry_run:
@@ -3289,32 +3290,21 @@ def main():
                 f.write(f"{percentage:.2f}")
 
         # 如果有测试点失败，输出提示信息
-        if total_score < max_score:
-            if not args.json:
-                console = Console()
-                shell_type = args.shell or get_current_shell()
+        if total_score < max_score and not args.json and grader.config.debug_config.get("show_test_build_hint", True):
+            shell_type = args.shell or get_current_shell()
 
-                console.print(
-                    "\n[bold yellow]To set TEST_BUILD environment variable to the failed test case's build directory:[/bold yellow]"
+            grader.console.print(
+                "\n[bold yellow]To set TEST_BUILD environment variable to the failed test case's build directory:[/bold yellow]"
+            )
+
+            if shell_type == "fish":
+                grader.console.print(
+                    "$ [bold green]python3 grader.py -l | source[/bold green]"
                 )
-
-                if shell_type == "fish":
-                    console.print(
-                        "$ [bold green]python3 grader.py -l | source[/bold green]"
-                    )
-                else:
-                    console.print(
-                        '$ [bold green]eval "$(python3 grader.py -l)"[/bold green]'
-                    )
             else:
-                shell_type = args.shell or get_current_shell()
-                print(
-                    "\nTo set TEST_BUILD to the first failed test case's build directory, run:"
+                grader.console.print(
+                    '$ [bold green]eval "$(python3 grader.py -l)"[/bold green]'
                 )
-                if shell_type == "fish":
-                    print("python3 grader.py -l | source")
-                else:
-                    print('eval "$(python3 grader.py -l)"')
 
         # 只要不是0分就通过
         sys.exit(0 if percentage > 0 else 1)

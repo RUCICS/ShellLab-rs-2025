@@ -15,31 +15,47 @@ timeout = 30.0
 command = "${tshref}"
 args = ["-p"]
 
-# Echo the command that will be executed (this simulates what sdriver does)
+# Run background job and check all outputs
 [[run.steps]]
 type = "input"
-content = "./myspin 1 &"
+content = "./myspin 2 &"
+echo = false
 
-# Wait briefly to allow the background job to start
 [[run.steps]]
 type = "sleep"
 seconds = 0.5
 
-# Run another command to ensure the shell returned to the prompt
 [[run.steps]]
 type = "input"
 content = "jobs"
+echo = false
 
-# Wait for the background job to complete
 [[run.steps]]
 type = "sleep"
-seconds = 1.5
+seconds = 2.0
 
-# Exit the shell
+[[run.steps]]
+type = "input"
+content = "jobs"
+echo = false
+
+# Quit the shell
 [[run.steps]]
 type = "input"
 content = "quit"
+echo = false
 
-# Wait for shell to terminate
+# Wait for the shell to terminate
 [[run.steps]]
 type = "wait"
+
+[[run.steps]]
+type = "check"
+
+[run.steps.check.sequence]
+patterns = [
+    { pattern = '''^\[\d+\] \(\d+\) \.\/myspin 1 &\n$''', required = true, description = "Background job started" },
+    { pattern = '''^\[\d+\] \(\d+\) Running \.\/myspin 1 &\n$''', required = true, description = "Background job running" },
+    { pattern = "^$", required = true, description = "Background job completed" },
+]
+verify_end = true

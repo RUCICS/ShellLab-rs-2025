@@ -1,6 +1,6 @@
 [meta]
 name = "Run a foreground job"
-description = "Tests the shell's ability to run a foreground job."
+description = "Tests the shell's ability to run a foreground job and correctly handle its output."
 score = 10
 
 [[run]]
@@ -15,17 +15,32 @@ timeout = 30.0
 command = "${tshref}"
 args = ["-p"]
 
-# Run the echo command
 [[run.steps]]
 type = "input"
-content = "/bin/echo \"tsh> quit\""
+content = "/bin/echo \"Hello from foreground job!\""
+echo = false
+
+[[run.steps]]
+type = "input"
+content = "/bin/echo \"Another message from tsh!\""
+echo = false
 
 # Quit the shell
 [[run.steps]]
 type = "input"
 content = "quit"
+echo = false
 
 # Wait for the shell to terminate
 [[run.steps]]
 type = "wait"
-timeout = 5.0
+
+[[run.steps]]
+type = "check"
+
+[run.steps.check.sequence]
+patterns = [
+    { pattern = "^Hello from foreground job!\n$", required = true, description = "First message" },
+    { pattern = "^Another message from tsh!\n$", required = true, description = "Second message" },
+]
+verify_end = true

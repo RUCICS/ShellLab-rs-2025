@@ -1,5 +1,6 @@
 [debug]
 default_type = "rust"
+show_test_build_hint = false
 
 [setup]
 # 在运行测试之前需要执行的准备步骤
