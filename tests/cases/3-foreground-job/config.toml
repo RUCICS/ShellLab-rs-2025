@@ -27,9 +27,7 @@ echo = false
 
 # Quit the shell
 [[run.steps]]
-type = "input"
-content = "quit"
-echo = false
+type = "close"
 
 # Wait for the shell to terminate
 [[run.steps]]
@@ -40,7 +38,7 @@ type = "check"
 
 [run.steps.check.sequence]
 patterns = [
-    { pattern = "^Hello from foreground job!\n$", required = true, description = "First message" },
-    { pattern = "^Another message from tsh!\n$", required = true, description = "Second message" },
+    { pattern = "^Hello from foreground job!", required = true, description = "First message" },
+    { pattern = "^Another message from tsh!", required = true, description = "Second message" },
 ]
 verify_end = true

@@ -560,7 +560,7 @@ class SequenceChecker:
             匹配结束的位置，未找到则返回-1
         """
         if regex_mode:
-            match = re.search(pattern, text[start_pos:])
+            match = re.search(pattern, text[start_pos:], re.MULTILINE)
             if match:
                 match_end = start_pos + match.end()
                 return match_end
@@ -1243,8 +1243,12 @@ class TestRunner:
         # 获取步骤描述基础信息
         step_name = step.get("name", step["command"])
         base_description = current_description if current_description else f"Running {test.meta['name']}: {step_name}"
+        result = None
 
         for i, interaction_step in enumerate(step.get("steps", []), 1):
+            if result:
+                break
+            
             step_type = interaction_step.get("type", "")
             
             # 更新进度显示，显示内部步骤进度
@@ -1305,8 +1309,6 @@ class TestRunner:
                     cmd,
                     args,
                 )
-                if result:
-                    return result
             elif step_type == "sleep":
                 self._handle_sleep_step(interaction_step)
             elif step_type == "signal":
@@ -1326,8 +1328,6 @@ class TestRunner:
                     cmd,
                     args,
                 )
-                if result:
-                    return result
 
             self.previous_step_type = step_type
             
@@ -1367,6 +1367,9 @@ class TestRunner:
         interactive_process.terminate()
         if ref_process:
             ref_process.terminate()
+            
+        if result:
+            return result
 
         # 如果没有分步评分，使用整体分数
         if not self.step_scores:
@@ -1818,17 +1821,14 @@ class TestRunner:
     def _resolve_path(
         self, path: str, test_dir: Path, cwd: Path = os.getcwd(), relative: bool = True
     ) -> str:
-        # 检查是否是预定义的可执行文件
         if path.startswith("${") and path.endswith("}"):
-            # 提取可执行文件名称
             exec_name = path[2:-1]  # 去掉 ${ 和 }
-            # 检查是否在预定义的可执行文件列表中
             if exec_name in self.config.executables:
-                # 替换为预定义的可执行文件路径
                 path = self.config.executables[exec_name]
 
         build_dir = test_dir / "build"
         build_dir.mkdir(exist_ok=True)
+        
         if relative:
             replacements = {
                 "${test_dir}": self._resolve_relative_path(test_dir, cwd),
@@ -2483,6 +2483,11 @@ class VSCodeConfigGenerator:
         return result
 
     def _resolve_path(self, path: str, test_dir: Path, cwd: Path = os.getcwd()) -> str:
+        if path.startswith("${") and path.endswith("}"):
+            exec_name = path[2:-1]
+            if exec_name in self.config.executables:
+                path = self.config.executables[exec_name]
+                
         build_dir = test_dir / "build"
         build_dir.mkdir(exist_ok=True)
 

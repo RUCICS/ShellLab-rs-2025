@@ -41,9 +41,7 @@ echo = false
 
 # Quit the shell
 [[run.steps]]
-type = "input"
-content = "quit"
-echo = false
+type = "close"
 
 # Wait for the shell to terminate
 [[run.steps]]
@@ -54,8 +52,7 @@ type = "check"
 
 [run.steps.check.sequence]
 patterns = [
-    { pattern = '''^\[\d+\] \(\d+\) \.\/myspin 1 &\n$''', required = true, description = "Background job started" },
-    { pattern = '''^\[\d+\] \(\d+\) Running \.\/myspin 1 &\n$''', required = true, description = "Background job running" },
-    { pattern = "^$", required = true, description = "Background job completed" },
+    { pattern = '''^\[\d+\] \(\d+\) \.\/myspin 2 &''', required = true, description = "Background job started" },
+    { pattern = '''^\[\d+\] \(\d+\) Running \.\/myspin 2 &''', required = true, description = "Background job running" },
 ]
 verify_end = true

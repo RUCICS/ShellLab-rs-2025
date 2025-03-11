@@ -66,7 +66,6 @@ type = "close"
 # Wait for shell to finish processing
 [[run.steps]]
 type = "wait"
-timeout = 3.0
 
 # Validate output against reference
 [[run.steps]]
