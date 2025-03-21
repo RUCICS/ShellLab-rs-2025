@@ -52,7 +52,7 @@ def judge():
     pwd_outputs = []
     
     for cmd, output in commands_with_output:
-        if cmd.strip() == "pwd":
+        if cmd.endswith("pwd"):
             pwd_outputs.append(output.strip())
 
     # 检查是否有至少两个不同的目录输出（初始目录和 cd 后的目录）

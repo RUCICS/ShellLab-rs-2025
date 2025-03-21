@@ -15,7 +15,7 @@ import venv
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Protocol, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
 
 
 def create_venv(venv_path):
@@ -479,20 +479,26 @@ class SequenceChecker:
                 unordered_patterns = pattern_item["unordered"]
                 required = pattern_item.get("required", True)
                 group_weight = pattern_item.get("weight", len(unordered_patterns))
-                group_description = pattern_item.get("description", "Unordered pattern group")
+                group_description = pattern_item.get(
+                    "description", "Unordered pattern group"
+                )
 
                 total_items += len(unordered_patterns)
                 total_weight += group_weight
 
                 # 处理无序组
-                result, end_pos, matched_item_count, group_matched_weight, unmatched_patterns = (
-                    self._match_unordered_group(
-                        text,
-                        unordered_patterns,
-                        current_pos,
-                        case_sensitive,
-                        regex_mode,
-                    )
+                (
+                    result,
+                    end_pos,
+                    matched_item_count,
+                    group_matched_weight,
+                    unmatched_patterns,
+                ) = self._match_unordered_group(
+                    text,
+                    unordered_patterns,
+                    current_pos,
+                    case_sensitive,
+                    regex_mode,
                 )
 
                 if result:
@@ -507,14 +513,16 @@ class SequenceChecker:
                 elif required:
                     # 必需的无序组没找到
                     error_msg = f"Required unordered group not fully matched: {group_description} - {matched_item_count}/{len(unordered_patterns)} patterns"
-                    
+
                     # 如果有没匹配的模式，添加它们的描述
                     if unmatched_patterns:
                         error_msg += "\nUnmatched patterns:"
                         for p in unmatched_patterns:
-                            p_desc = p.get("description", f"Pattern: {p.get('pattern')}")
+                            p_desc = p.get(
+                                "description", f"Pattern: {p.get('pattern')}"
+                            )
                             error_msg += f"\n  - {p_desc}"
-                    
+
                     errors.append(error_msg)
                     if not allow_partial:
                         return False, 0.0, error_msg
@@ -548,7 +556,11 @@ class SequenceChecker:
         else:
             # 部分匹配但不允许部分得分，或完全不匹配
             error_detail = "\n".join(errors) if errors else ""
-            return False, 0.0, f"Only {matched_count}/{total_items} patterns matched\n{error_detail}"
+            return (
+                False,
+                0.0,
+                f"Only {matched_count}/{total_items} patterns matched\n{error_detail}",
+            )
 
     def _find_pattern(
         self, text: str, pattern: str, start_pos: int, regex_mode: bool
@@ -607,10 +619,10 @@ class SequenceChecker:
 
             processed_patterns.append(
                 {
-                    "pattern": pattern, 
-                    "matched": False, 
+                    "pattern": pattern,
+                    "matched": False,
                     "weight": weight,
-                    "original": original_pattern
+                    "original": original_pattern,
                 }
             )
 
@@ -661,7 +673,13 @@ class SequenceChecker:
         # 检查是否所有模式都已匹配
         all_matched = matched_count == len(processed_patterns)
 
-        return all_matched, start_pos + last_match_end, matched_count, matched_weight, unmatched_patterns
+        return (
+            all_matched,
+            start_pos + last_match_end,
+            matched_count,
+            matched_weight,
+            unmatched_patterns,
+        )
 
 
 class CompositeChecker:
@@ -972,8 +990,10 @@ class TestRunner:
                     if total_steps == 1:
                         task_description = f"Running {test.meta['name']}..."
                     else:
-                        task_description = f"Running {test.meta['name']} [0/{total_steps}]..."
-                    
+                        task_description = (
+                            f"Running {test.meta['name']} [0/{total_steps}]..."
+                        )
+
                     task = progress.add_task(
                         task_description,
                         total=total_steps,
@@ -1074,7 +1094,7 @@ class TestRunner:
                         description=f"Running {test.meta['name']} [{i}/{len(test.run_steps)}]: {step_name}",
                         completed=i - 1,
                     )
-                
+
                 # 保存当前的进度和任务，以便交互式测试使用
                 self.current_progress = progress
                 self.current_task = task
@@ -1154,10 +1174,10 @@ class TestRunner:
             current_progress = getattr(self, "current_progress", None)
             current_task = getattr(self, "current_task", None)
             current_description = None
-            
+
             if current_progress is not None and current_task is not None:
                 current_description = current_progress.tasks[current_task].description
-            
+
             # 执行交互步骤
             interactive_result = self._execute_interactive_steps(
                 test,
@@ -1231,28 +1251,36 @@ class TestRunner:
         self.max_score = 0
         self.previous_step_type = ""
         self.diff_results = []  # 存储每一步的差异结果
-        
+
         # 启动进程
         interactive_process.start()
         if ref_process:
             ref_process.start()
-            
+
         # 交互步骤总数
         total_interactive_steps = len(step.get("steps", []))
-        
+
         # 获取步骤描述基础信息
         step_name = step.get("name", step["command"])
-        base_description = current_description if current_description else f"Running {test.meta['name']}: {step_name}"
+        base_description = (
+            current_description
+            if current_description
+            else f"Running {test.meta['name']}: {step_name}"
+        )
         result = None
 
         for i, interaction_step in enumerate(step.get("steps", []), 1):
             if result:
                 break
-            
+
             step_type = interaction_step.get("type", "")
-            
+
             # 更新进度显示，显示内部步骤进度
-            if current_progress is not None and current_task is not None and total_interactive_steps > 1:
+            if (
+                current_progress is not None
+                and current_task is not None
+                and total_interactive_steps > 1
+            ):
                 step_info = f"{step_type}"
                 if step_type == "input" and "content" in interaction_step:
                     content = interaction_step["content"]
@@ -1262,10 +1290,10 @@ class TestRunner:
                     step_info = f"input: {content}"
                 elif step_type == "signal" and "signal" in interaction_step:
                     step_info = f"signal: {interaction_step['signal']}"
-                
+
                 current_progress.update(
                     current_task,
-                    description=f"{base_description} [{i}/{total_interactive_steps}] - {step_info}"
+                    description=f"{base_description} [{i}/{total_interactive_steps}] - {step_info}",
                 )
 
             # 检查超时
@@ -1288,56 +1316,69 @@ class TestRunner:
                 )
 
             # 处理不同类型的交互步骤
-            if step_type == "input":
-                self._handle_input_step(
-                    interaction_step,
-                    interactive_process,
-                    ref_process,
-                    self.previous_step_type,
-                )
-            elif step_type == "close":
-                self._handle_close_step(interactive_process, ref_process)
-            elif step_type == "wait":
-                result = self._handle_wait_step(
-                    interaction_step,
-                    interactive_process,
-                    ref_process,
-                    test,
-                    step,
-                    step_index,
-                    start_time,
-                    cmd,
-                    args,
-                )
-            elif step_type == "sleep":
-                self._handle_sleep_step(interaction_step)
-            elif step_type == "signal":
-                self._handle_signal_step(
-                    interaction_step, interactive_process, ref_process
-                )
-            elif step_type == "check":
-                result = self._handle_check_step(
-                    i,
-                    interaction_step,
-                    interactive_process,
-                    ref_process,
-                    test,
-                    step,
-                    step_index,
-                    start_time,
-                    cmd,
-                    args,
+            try:
+                if step_type == "input":
+                    self._handle_input_step(
+                        interaction_step,
+                        interactive_process,
+                        ref_process,
+                        self.previous_step_type,
+                    )
+                elif step_type == "close":
+                    self._handle_close_step(interactive_process, ref_process)
+                elif step_type == "wait":
+                    result = self._handle_wait_step(
+                        interaction_step,
+                        interactive_process,
+                        ref_process,
+                        test,
+                        step,
+                        step_index,
+                        start_time,
+                        cmd,
+                        args,
+                    )
+                elif step_type == "sleep":
+                    self._handle_sleep_step(interaction_step)
+                elif step_type == "signal":
+                    self._handle_signal_step(
+                        interaction_step, interactive_process, ref_process
+                    )
+                elif step_type == "check":
+                    result = self._handle_check_step(
+                        i,
+                        interaction_step,
+                        interactive_process,
+                        ref_process,
+                        test,
+                        step,
+                        step_index,
+                        start_time,
+                        cmd,
+                        args,
+                    )
+            except Exception as e:
+                result = TestResult(
+                    success=False,
+                    message=f"Error handling {step_type} step: {str(e)}",
+                    time=time.perf_counter() - start_time,
+                    score=self.total_score,
+                    max_score=step.get("score", test.meta["score"]),
+                    step_scores=self.step_scores,
+                    error_details={
+                        "step": step_index,
+                        "step_name": step.get("name", step["command"]),
+                        "error_message": f"Error handling {step_type} step: {str(e)}",
+                        "command": " ".join(cmd + args),
+                    },
                 )
 
             self.previous_step_type = step_type
-            
+
         # 交互测试结束后，恢复原来的描述
         if current_progress is not None and current_task is not None:
-            current_progress.update(
-                current_task,
-                description=base_description
-            )
-            
+            current_progress.update(current_task, description=base_description)
+
         if self.verbose and self.console and not isinstance(self.console, type):
             self.console.print("[bold cyan]Interactive test finished[/bold cyan]")
             interactive_process.print_verbose(self.console)
@@ -1355,19 +1396,17 @@ class TestRunner:
             if self.console and not isinstance(self.console, type):
                 has_diff = any(not diff["match"] for diff in self.diff_results)
                 if has_diff:
-                    self._print_diff_results(
-                        self.diff_results, len(self.diff_results)
-                    )
+                    self._print_diff_results(self.diff_results, len(self.diff_results))
                 else:
                     self.console.print(
                         "\n[bold green]All outputs match with reference implementation[/bold green]"
                     )
-                    
+
         # 确保进程终止
         interactive_process.terminate()
         if ref_process:
             ref_process.terminate()
-            
+
         if result:
             return result
 
@@ -1828,7 +1867,7 @@ class TestRunner:
 
         build_dir = test_dir / "build"
         build_dir.mkdir(exist_ok=True)
-        
+
         if relative:
             replacements = {
                 "${test_dir}": self._resolve_relative_path(test_dir, cwd),
@@ -2346,52 +2385,49 @@ class VSCodeConfigGenerator:
             configs = []
 
             # Add CodeLLDB configuration for Rust
-            configs.append({
-                "name": f"{base_name} (CodeLLDB)",
-                "type": "lldb",
-                "request": "launch",
-                "program": program,
-                "args": args,
-                "cwd": cwd,
-                "sourceLanguages": ["rust"],
-                "internalConsoleOptions": "neverOpen",
-                "preLaunchTask": f"build-{test_case.path.name}",
-                "env": {
-                    "RUST_BACKTRACE": "1"
+            configs.append(
+                {
+                    "name": f"{base_name} (CodeLLDB)",
+                    "type": "lldb",
+                    "request": "launch",
+                    "program": program,
+                    "args": args,
+                    "cwd": cwd,
+                    "sourceLanguages": ["rust"],
+                    "internalConsoleOptions": "neverOpen",
+                    "preLaunchTask": f"build-{test_case.path.name}",
+                    "env": {"RUST_BACKTRACE": "1"},
                 }
-            })
+            )
 
             # Add GDB configuration for Rust
-            configs.append({
-                "name": f"{base_name} (GDB)",
-                "type": "cppdbg",
-                "request": "launch",
-                "program": program,
-                "args": args,
-                "stopOnEntry": True,
-                "cwd": cwd,
-                "environment": [
-                    {
-                        "name": "RUST_BACKTRACE",
-                        "value": "1"
-                    }
-                ],
-                "internalConsoleOptions": "neverOpen",
-                "MIMode": "gdb",
-                "setupCommands": [
-                    {
-                        "description": "Enable pretty-printing for gdb",
-                        "text": "-enable-pretty-printing",
-                        "ignoreFailures": True,
-                    },
-                    {
-                        "description": "Enable Rust pretty-printing",
-                        "text": "set language rust",
-                        "ignoreFailures": True,
-                    }
-                ],
-                "preLaunchTask": f"build-{test_case.path.name}",
-            })
+            configs.append(
+                {
+                    "name": f"{base_name} (GDB)",
+                    "type": "cppdbg",
+                    "request": "launch",
+                    "program": program,
+                    "args": args,
+                    "stopOnEntry": True,
+                    "cwd": cwd,
+                    "environment": [{"name": "RUST_BACKTRACE", "value": "1"}],
+                    "internalConsoleOptions": "neverOpen",
+                    "MIMode": "gdb",
+                    "setupCommands": [
+                        {
+                            "description": "Enable pretty-printing for gdb",
+                            "text": "-enable-pretty-printing",
+                            "ignoreFailures": True,
+                        },
+                        {
+                            "description": "Enable Rust pretty-printing",
+                            "text": "set language rust",
+                            "ignoreFailures": True,
+                        },
+                    ],
+                    "preLaunchTask": f"build-{test_case.path.name}",
+                }
+            )
 
             return configs
         else:
@@ -2487,7 +2523,7 @@ class VSCodeConfigGenerator:
             exec_name = path[2:-1]
             if exec_name in self.config.executables:
                 path = self.config.executables[exec_name]
-                
+
         build_dir = test_dir / "build"
         build_dir.mkdir(exist_ok=True)
 
@@ -2658,9 +2694,15 @@ class Grader:
         self.console.print("   - Use Debug Console for expressions")
         if debug_type == "rust":
             self.console.print("\n4. Rust-specific debug features:")
-            self.console.print("   - RUST_BACKTRACE=1 is enabled for better error messages")
-            self.console.print("   - CodeLLDB provides native Rust debugging experience")
-            self.console.print("   - GDB configuration is also available as a backup option")
+            self.console.print(
+                "   - RUST_BACKTRACE=1 is enabled for better error messages"
+            )
+            self.console.print(
+                "   - CodeLLDB provides native Rust debugging experience"
+            )
+            self.console.print(
+                "   - GDB configuration is also available as a backup option"
+            )
         self.console.print(
             "\nNote: The test will be automatically rebuilt before debugging starts"
         )
@@ -3125,7 +3167,8 @@ def get_current_shell() -> str:
     # 默认返回bash
     return "bash"
 
-def get_last_failed_tests(history_file: Path | str) -> List[Any]:
+
+def get_last_failed_tests(history_file: Union[Path, str]) -> List[Any]:
     """Get the last failed tests from the history file
 
     Args:
@@ -3139,14 +3182,15 @@ def get_last_failed_tests(history_file: Path | str) -> List[Any]:
 
     if not history_file.exists():
         return []
-    
+
     with open(history_file, "r", encoding="utf-8") as f:
         history = json.load(f)
         if not history:
             return []
-        
+
         last_result = history[-1]
         return filter(lambda x: x["status"] != "PASS", last_result["tests"])
+
 
 def main():
     parser = argparse.ArgumentParser(description="Grade student submissions")
@@ -3230,7 +3274,7 @@ def main():
                 if not failed_tests:
                     print("No failed test found in last run", file=sys.stderr)
                     sys.exit(1)
-                
+
                 first_failed_test = failed_tests[0]
                 shell_type = args.shell or get_current_shell()
 
@@ -3239,9 +3283,9 @@ def main():
                     print(f"set -x TEST_BUILD {first_failed_test['build_path']}")
                 else:  # bash 或 zsh
                     print(f"export TEST_BUILD={first_failed_test['build_path']}")
-                    
+
                 sys.exit(0)
-                    
+
             except Exception as e:
                 print(f"Error reading test history: {str(e)}", file=sys.stderr)
                 sys.exit(1)
@@ -3263,21 +3307,23 @@ def main():
             vscode_no_merge=args.vscode_no_merge,
             compare=args.compare,
         )
-        
+
         if args.rerun_failed:
             try:
                 failed_tests = get_last_failed_tests(".test_history")
                 if not failed_tests:
                     print("No failed test found in last run", file=sys.stderr)
                     sys.exit(1)
-                
+
                 failed_paths = [Path(test["path"]) for test in failed_tests]
-                total_score, max_score = grader.run_all_tests(specific_paths=failed_paths)
+                total_score, max_score = grader.run_all_tests(
+                    specific_paths=failed_paths
+                )
 
             except Exception as e:
                 print(f"Error reading test history: {str(e)}", file=sys.stderr)
                 sys.exit(1)
-        
+
         else:
             total_score, max_score = grader.run_all_tests(
                 args.test, prefix_match=args.prefix, group=args.group
@@ -3295,7 +3341,11 @@ def main():
                 f.write(f"{percentage:.2f}")
 
         # 如果有测试点失败，输出提示信息
-        if total_score < max_score and not args.json and grader.config.debug_config.get("show_test_build_hint", True):
+        if (
+            total_score < max_score
+            and not args.json
+            and grader.config.debug_config.get("show_test_build_hint", True)
+        ):
             shell_type = args.shell or get_current_shell()
 
             grader.console.print(

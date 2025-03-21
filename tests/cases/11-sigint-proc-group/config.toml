@@ -36,7 +36,7 @@ stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)"
 
 [[run.steps]]
 type = "input"
-content = "/bin/ps a"
+content = "/bin/ps ax"
 
 [[run.steps]]
 type = "check"

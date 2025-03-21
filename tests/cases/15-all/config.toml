@@ -57,20 +57,6 @@ stdout_pattern = "Job \\[\\d+\\] \\(\\d+\\) terminated by signal (2|SIGINT)"
 # Test background jobs
 [[run.steps]]
 type = "input"
-content = "./myspin 3 &"
-echo = true
-wait_for_output = true
-
-[[run.steps]]
-type = "check"
-score = 1
-must_pass = true
-
-[run.steps.check]
-stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 3 &"
-
-[[run.steps]]
-type = "input"
 content = "./myspin 4 &"
 echo = true
 wait_for_output = true
@@ -81,7 +67,21 @@ score = 1
 must_pass = true
 
 [run.steps.check]
-stdout_pattern = "\\[2\\] \\(\\d+\\) \\./myspin 4 &"
+stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 4 &"
+
+[[run.steps]]
+type = "input"
+content = "./myspin 5 &"
+echo = true
+wait_for_output = true
+
+[[run.steps]]
+type = "check"
+score = 1
+must_pass = true
+
+[run.steps.check]
+stdout_pattern = "\\[2\\] \\(\\d+\\) \\./myspin 5 &"
 
 # Test jobs command
 [[run.steps]]
@@ -98,8 +98,8 @@ must_pass = true
 [run.steps.check.sequence]
 # Use an unordered group to allow jobs to be listed in any order
 unordered = [
-    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 3 &", required = true },
     { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 5 &", required = true },
 ]
 
 # Test fg and TSTP handling
@@ -140,8 +140,8 @@ must_pass = true
 [run.steps.check.sequence]
 # Use an unordered group to allow jobs to be listed in any order
 unordered = [
-    { pattern = "\\[\\d+\\] \\(\\d+\\) Stopped \\./myspin 3 &", required = true },
-    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Stopped \\./myspin 4 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 5 &", required = true },
 ]
 
 # Test bg with invalid job ID
@@ -172,7 +172,7 @@ score = 1
 must_pass = true
 
 [run.steps.check]
-stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 3 &"
+stdout_pattern = "\\[1\\] \\(\\d+\\) \\./myspin 4 &"
 
 # Test jobs command after bg
 [[run.steps]]
@@ -189,8 +189,8 @@ must_pass = true
 [run.steps.check.sequence]
 # Use an unordered group to allow jobs to be listed in any order
 unordered = [
-    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 3 &", required = true },
     { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 4 &", required = true },
+    { pattern = "\\[\\d+\\] \\(\\d+\\) Running \\./myspin 5 &", required = true },
 ]
 
 # Test fg again
@@ -208,6 +208,5 @@ echo = true
 
 [[run.steps]]
 type = "wait"
-timeout = 1.0
 must_terminate = true
 score = 0.5

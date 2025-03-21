@@ -53,7 +53,7 @@ stdout_pattern = "\\[\\d+\\] \\(\\d+\\) Stopped ./mysplit 4"
 
 [[run.steps]]
 type = "input"
-content = "/bin/ps a"
+content = "/bin/ps ax"
 echo = true
 wait_for_output = true
 
@@ -75,7 +75,7 @@ seconds = 1
 
 [[run.steps]]
 type = "input"
-content = "/bin/ps a"
+content = "/bin/ps ax"
 echo = true
 wait_for_output = true
 

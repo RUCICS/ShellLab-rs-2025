@@ -18,20 +18,20 @@ args = ["-p"]
 # 测试输出重定向
 [[run.steps]]
 type = "input"
-content = "echo 'Hello, World!' > output.txt"
+content = "/bin/echo 'Hello, World!' > output.txt"
 
 [[run.steps]]
 type = "input"
-content = "cat output.txt"
+content = "/bin/cat output.txt"
 
 # 测试输入重定向
 [[run.steps]]
 type = "input"
-content = "echo 'Test input redirection' > input.txt"
+content = "/bin/echo 'Test input redirection' > input.txt"
 
 [[run.steps]]
 type = "input"
-content = "cat < input.txt"
+content = "/bin/cat < input.txt"
 
 # 关闭 shell
 [[run.steps]]

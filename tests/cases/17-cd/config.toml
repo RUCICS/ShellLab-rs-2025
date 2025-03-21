@@ -17,7 +17,7 @@ args = ["-p"]
 
 [[run.steps]]
 type = "input"
-content = "pwd"
+content = "/usr/bin/pwd"
 
 [[run.steps]]
 type = "input"
@@ -25,7 +25,7 @@ content = "cd .."
 
 [[run.steps]]
 type = "input"
-content = "pwd"
+content = "/usr/bin/pwd"
 
 [[run.steps]]
 type = "close"

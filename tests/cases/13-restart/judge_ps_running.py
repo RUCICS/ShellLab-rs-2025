@@ -11,7 +11,7 @@ def judge_ps_output(stdout):
     # Find the second instance of ps output (after fg command)
     ps_instances = []
     for i, line in enumerate(lines):
-        if line.strip() == "tsh> /bin/ps a":
+        if line.strip() == "> /bin/ps ax":
             ps_instances.append(i)
 
     if len(ps_instances) < 2:
@@ -26,7 +26,7 @@ def judge_ps_output(stdout):
     ps_lines = []
     for i in range(ps_start, len(lines)):
         line = lines[i].strip()
-        if line.startswith("tsh>"):
+        if line.startswith(">"):
             break
         if line:
             ps_lines.append(line)

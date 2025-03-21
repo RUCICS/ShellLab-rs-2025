@@ -8,10 +8,10 @@ def judge_ps_output(stdout):
     # Convert stdout to lines for easier processing
     lines = stdout.strip().split("\n")
 
-    # Find where the ps output starts (after "tsh> /bin/ps a")
+    # Find where the ps output starts (after "> /bin/ps ax")
     ps_start = -1
     for i, line in enumerate(lines):
-        if line.strip() == "tsh> /bin/ps a":
+        if line.strip() == "> /bin/ps ax":
             ps_start = i + 1
             break
 

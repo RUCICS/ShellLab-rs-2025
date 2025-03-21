@@ -10,9 +10,9 @@ def main():
     max_score = input_data.get("max_score", 2.0)
 
     # 提取/bin/ps命令的输出
-    # 方法：找到包含"tsh> /bin/ps a"的行，然后获取它后面的内容直到下一个提示符
+    # 方法：找到包含"tsh> /bin/ps ax"的行，然后获取它后面的内容直到下一个提示符
     ps_output = ""
-    ps_command_pattern = r"> /bin/ps a\s*\n"
+    ps_command_pattern = r"> /bin/ps ax\s*\n"
     match = re.search(ps_command_pattern, stdout)
 
     if match:
